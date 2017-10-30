@@ -8,7 +8,7 @@ mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 
 Getting 92% accuracy on MNIST is bad. It's almost embarrassingly bad. In this section, we'll fix that,
 jumping from a very simple model to something moderately sophisticated: a small convolutional neural
-network. This will get us to around 99.2@ accuracy -- not state of the art, but respectable.
+network. This will get us to around 99.2% accuracy -- not state of the art, but respectable.
 
 RESHAPE -> CONV1 -> POOL1 -> CONV2 -> POOL2 -> FC1 -> DROUPOUT -> FC2 -> LOSS
 
