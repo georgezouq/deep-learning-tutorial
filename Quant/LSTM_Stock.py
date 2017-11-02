@@ -1,6 +1,8 @@
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt2
+
 import pandas_datareader.data as web
 from sklearn import preprocessing
 from keras.models import Sequential
@@ -118,3 +120,32 @@ def model_score(model, X_train, y_train, X_test, y_test):
     return trainScore[0], testScore[0]
 
 model_score(model, X_train, y_train, X_test, y_test)
+
+'''
+Plot out prediction
+'''
+def denormalize(stock_name, normalized_value):
+    start = datetime.datetime(2000, 1, 1)
+    end = datetime.date.today()
+    df = web.DataReader(stock_name, "yahoo", start, end)
+    df = df['Adj Close'].values.reshape(-1, 1)
+    normalized_value = normalized_value.reshape(-1, 1)
+
+    min_max_scaler = preprocessing.MinMaxScalar()
+    a = min_max_scaler.fit_transform(df)
+    new = min_max_scaler.fit_transform(df)
+    new = min_max_scaler.inverse_transform(normalized_value)
+    return new
+
+def plot_result(stock_name, normalized_value_p, normalized_value_y_test):
+    newp = denormalize(stock_name, normalized_value_p)
+    newy_test = denormalize(stock_name, normalized_value_y_test)
+    plt2.plot(newp, color='red', label='Prediction')
+    plt2.plot(newy_test,color='blue', label='Actual')
+    plt2.legend(loc='best')
+    plt2.title('The test result for {}'.format(stock_name))
+    plt2.xlabel('Days')
+    plt2.ylabel('Adjusted Close')
+    plt2.show()
+
+plot_result(stock_name, p, y_test)
