@@ -122,6 +122,22 @@ def model_score(model, X_train, y_train, X_test, y_test):
 model_score(model, X_train, y_train, X_test, y_test)
 
 '''
+Prediction vs Real results
+'''
+
+def percentage_difference(model, X_test, y_test):
+    percentage_diff = []
+    p = model.predict(X_test)
+    for u in range(len(y_test)):
+        pr = p[u][0]
+
+        percentage_diff.append((pr-y_test[u] / pr) * 100)
+
+    return p
+
+p = percentage_difference(model, X_test, y_test)
+
+'''
 Plot out prediction
 '''
 def denormalize(stock_name, normalized_value):
