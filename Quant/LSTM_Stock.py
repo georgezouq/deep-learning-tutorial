@@ -165,3 +165,179 @@ def plot_result(stock_name, normalized_value_p, normalized_value_y_test):
     plt2.show()
 
 plot_result(stock_name, p, y_test)
+
+'''
+Part2. Fine tune model
+
+Function to load data, train model and see score
+'''
+
+stock_name = '^GSPC'
+seq_len = 22
+shape = [4, seq_len, 1] # feature, window, output
+neurons = [128, 128, 32, 1]
+epochs = 300
+
+def  quick_measure(stock_name, seq_len, d, shape, neurons, epochs):
+    df = get_stock_data(stock_name)
+    X_train, y_train, X_test, y_test = load_data(df, seq_len)
+    model = build_model2(shape, neurons, d)
+    model.fit(X_train, y_train, batch_size=512, epochs=epochs, validation_split=0.1, verbose=1)
+
+    return model_score(model, X_train, y_train, X_test, y_test)
+
+'''
+Fine tune hyperparameter
+'''
+
+dlist = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+neurons_LSTM = [32, 64, 128, 256, 512, 1024, 2048]
+dropout_result = {}
+
+for d in dlist:
+    trainScore, testScore = quick_measure(stock_name, seq_len, d, shape, neurons, epochs)
+    dropout_result[d] = testScore
+
+min_val = min(dropout_result.values())
+min_val_key = [k for k, v in dropout_result.item() if v == min_val]
+print(dropout_result)
+print(min_val_key)
+
+lists = sorted(dropout_result.items())
+x, y = zip(*lists)
+plt.plot(x, y)
+plt.title('Finding the best hyperparameter')
+plt.xlabel('Dropout')
+plt.ylabel('Mean Square Error')
+plt.show()
+
+stock_name = '^GSPC'
+seq_len = 22
+shape = [4, seq_len, 1] # feature, window, output
+neurons = [128, 128, 32, 1]
+epochslist = [10,20,30,40,50,60,70,80,90,100]
+
+epochs_result = {}
+
+for epochs in epochslist:
+    trainScore, testScore = quick_measure(stock_name, seq_len, d, shape, neurons, epochs)
+    epochs_result[epochs] = testScore
+
+lists = sorted(epochs_result.items())
+x,y = zip(*lists)
+plt.plot(x, y)
+plt.title('Finding the best hyperparameter')
+plt.xlabel('Epochs')
+plt.ylabel('Mean Square Error')
+plt.show()
+
+'''
+Optimal number of neurons
+'''
+
+stock_name = '^GSPC'
+seq_len = 22
+shape = [4, seq_len, 1] # feature, window, output
+epochs = 90
+dropout = 0.3
+neuronlist1 = [32, 64, 128, 256, 512]
+neuronlist2 = [16, 32, 64]
+neurons_result = {}
+
+for neuron_lstm in neuronlist1:
+    neurons = [neuron_lstm, neuron_lstm]
+    for activation in neuronlist2:
+        neurons.append(activation)
+        neurons.append(1)
+        trainScore, testScore = quick_measure(stock_name, seq_len, d, shape, neurons, epochs)
+        neurons_result[str(neurons)] = testScore
+        neurons = neurons[:2]
+
+lists = sorted(neurons_result.items())
+x,y = zip(*lists)
+
+plt.title('Finding the best hyperparameter')
+plt.xlabel('neurons')
+plt.ylabel('Mean Square Error')
+
+plt.bar(range(len(lists)), y, align='center')
+plt.xticks(range(len(lists)), x)
+plt.xticks(rotation=90)
+
+plt.show()
+
+'''
+Optimial Dropout value
+'''
+
+stock_name = '^GSPC'
+seq_len = 22
+shape = [4, seq_len, 1] # feature, window, output
+neurons = [256, 256, 32, 1]
+epochs = 90
+decaylist = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+
+def build_model3(layers, neurons, d, decay):
+    model = Sequential()
+
+    model.add(LSTM(neurons[0], input_shape=(layers[1], layers[0]), return_sequences=True))
+    model.add(Dropout(d))
+
+    model.add(LSTM(neurons[1], input_shape=(layers[1], layers[0]), return_sequences=False))
+    model.add(Dropout(d))
+
+    model.add(Dense(neurons[2], kernel_initializer="uniform", activation='relu'))
+    model.add(Dense(neurons[3], kernel_initializer="uniform", activation='linear'))
+    # model = load_model('my_LSTM_stock_model1000.h5')
+    adam = keras.optimizers.Adam(decay=decay)
+    model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
+    model.summary()
+    return model
+
+def quick_measure(stock_name, seq_len, d, shape, neurons, epochs, decay):
+    df = get_stock_data(stock_name)
+    X_train, y_train, X_test, y_test = load_data(df, seq_len)
+    model = build_model3(shape, neurons, d, decay)
+    model.fit(X_train, y_train, batch_size=512, epochs=epochs, validation_split=0.1, verbose=1)
+    # model.save('LSTM_Stock_prediction-20170429.h5')
+    trainScore, testScore = model_score(model, X_train, y_train, X_test, y_test)
+    return trainScore, testScore
+
+decay_result = {}
+
+for decay in decaylist:
+    trainScore, testScore = quick_measure(stock_name, seq_len, d, shape, neurons, epochs, decay)
+    decay_result[decay] = testScore
+
+lists = sorted(decay_result.items())
+x,y = zip(*lists)
+plt.plot(x,y)
+plt.title('Finding the best hyperparameter')
+plt.xlabel('Decay')
+plt.ylabel('Mean Square Error')
+plt.show()
+
+stock_name = '^GSPC'
+neurons = [256, 256, 32, 1]
+epochs = 90
+d = 0.3 #dropout
+decay = 0.4
+
+seq_len_list = [5, 10, 22, 60, 120, 180]
+
+seq_len_result = {}
+
+for seq_len in seq_len_list:
+    shape = [4, seq_len, 1]
+
+    trainScore, testScore = quick_measure(stock_name, seq_len, d, shape, neurons, epochs, decay)
+    seq_len_result[seq_len] = testScore
+
+lists = sorted(seq_len_result.items())
+x,y = zip(*lists)
+plt.plot(x,y)
+plt.title('Finding the best hyperparameter')
+plt.xlabel('Days')
+plt.ylabel('Mean Square Error')
+plt.show()
