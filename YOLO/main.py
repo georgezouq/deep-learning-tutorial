@@ -10,6 +10,8 @@ from yolo_utils import scale_boxes
 
 # matplotlib inline
 
+# yolo official site https://pjreddie.com/darknet/yolo/
+
 def yolo_filter_boxes(box_confidence, boxes, box_class_probs, threshold = .6):
     # Step 1: Compute box scores
     box_scores = box_confidence * box_class_probs
